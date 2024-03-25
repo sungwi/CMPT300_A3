@@ -1,4 +1,4 @@
-# Compiler settings 
+# Compiler settings
 CC=gcc
 CFLAGS=-Iinclude -Wall
 LDFLAGS=
@@ -29,4 +29,4 @@ link:
 
 clean:
 	rm -f $(SRC_DIR)/*.o $(EXEC)
-	rm -f $(BIN_DIR)/$(LINK_NAME)1
+	rm -f $(BIN_DIR)/$(LINK_NAME)

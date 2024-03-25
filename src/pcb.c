@@ -1,5 +1,6 @@
 #include "pcb.h"
 
+int pidCounter = 0;
 
 Simulation* initSml() {
     Simulation* sml = (Simulation*)malloc(sizeof(Simulation));
@@ -19,6 +20,66 @@ Simulation* initSml() {
     return sml;
 }
 
+void taskManage(Simulation* sml) {
+    int rQ0Count = List_count(sml->readyQs[0]);
+    int rQ1Count = List_count(sml->readyQs[1]);
+    int rQ2Count = List_count(sml->readyQs[2]);
+    bool specialCase = false;
+    PCB* initP;
+    if ((pidCounter != 1) && List_count(sml->runQ) == 0) {
+        // prirotiy high
+        if (rQ0Count > 0) {
+            void* tmp = List_trim(sml->readyQs[0]);
+            PCB* nextP = (PCB*)tmp;
+            if(nextP->pid == 0){
+                specialCase = true;
+                initP = nextP;
+            }
+            else {
+                nextP->state = RUNNING;
+                List_append(sml->runQ, nextP);
+            }
+        }
+        else if (rQ1Count > 0) {
+            void* tmp = List_trim(sml->readyQs[1]);
+            PCB* nextP = (PCB*)tmp;
+            if(nextP->pid == 0){
+                specialCase = true;
+                initP = nextP;
+            }
+            else {
+                nextP->state = RUNNING;
+                List_append(sml->runQ, nextP);
+            }
+        }
+        else if (rQ2Count > 0) {
+            void* tmp = List_trim(sml->readyQs[2]);
+            PCB* nextP = (PCB*)tmp;
+            if(nextP->pid == 0){
+                specialCase = true;
+                initP = nextP;
+            }
+            else {
+                nextP->state = RUNNING;
+                List_append(sml->runQ, nextP);
+            }
+        }
+        else {
+            // dummy else
+            printf("");
+        }
+
+        if (specialCase && (rQ0Count == 0) && (rQ1Count == 0) && (rQ2Count == 0)) {
+            printf("\nSpecial Case: init process (pid#0) runs\n");
+            initP->state = RUNNING;
+            List_append(sml->runQ, initP);
+        }
+        // else {
+        //     printf("No PCB in Ready Queues");
+        // }
+    }
+}
+
 PCB* createPCB(Simulation* sml, int priority) {
     PCB* newP = (PCB*)malloc(sizeof(PCB));
     bool result = false;
@@ -27,7 +88,7 @@ PCB* createPCB(Simulation* sml, int priority) {
         newP->priority = priority;
         newP->state = READY; // by default
         newP->receiveMsg = List_create();
-
+        List_append(sml->readyQs[priority], newP);
         sml->pcbPool[newP->pid] = newP;
         result = true;
     }
@@ -70,7 +131,7 @@ void killPCB(Simulation* sml, int pid) {
     PCB* killed = sml->pcbPool[pid];
     if(killed != NULL){
         sml->pcbPool[pid] = NULL;  // remove from the pool
-        free(killed);
+        findAndRemove(sml, pid);
         printf("Success - Kill\nPid #: %d", pid);
     }
     else{
@@ -221,37 +282,109 @@ void procInfoPCB(Simulation* sml, int pid) {
 void Totalinfo(Simulation* sml) {
     if (sml != NULL) {
         // ready qs
-        printf("Ready Queue\nHigh[");
-        for (Node* n = sml->readyQs[0]->pFirstNode; n != NULL; n = n->pNext) {
+        printf("\nReady Queue\nHigh[");
+        for (Node* n = sml->readyQs[0]->pLastNode; n != NULL; n = n->pPrev) {
             void* tmp = n->pItem;
             PCB* process = (PCB*)tmp;
             printf("%d, ", process->pid);
         }
-        printf("Ready Queue\nNorm[");
-        for (Node* n = sml->readyQs[1]->pFirstNode; n != NULL; n = n->pNext) {
+        printf("\nReady Queue\nNorm[");
+        for (Node* n = sml->readyQs[1]->pLastNode; n != NULL; n = n->pPrev) {
             void* tmp = n->pItem;
             PCB* process = (PCB*)tmp;
             printf("%d, ", process->pid);
         }        
-        printf("Ready Queue\nLow[");
-        for (Node* n = sml->readyQs[2]->pFirstNode; n != NULL; n = n->pNext) {
+        printf("\nReady Queue\nLow[");
+        for (Node* n = sml->readyQs[2]->pLastNode; n != NULL; n = n->pPrev) {
             void* tmp = n->pItem;
             PCB* process = (PCB*)tmp;
             printf("%d, ", process->pid);
         }
         // run q
-        printf("Running Queue\n[");
-        for (Node* n = sml->runQ->pFirstNode; n != NULL; n = n->pNext) {
+        printf("\nRunning Queue\n[");
+        for (Node* n = sml->runQ->pLastNode; n != NULL; n = n->pPrev) {
             void* tmp = n->pItem;
             PCB* process = (PCB*)tmp;
             printf("%d, ", process->pid);
         }
         // blockQ
-        printf("Blocked Queue\n[");
-        for (Node* n = sml->blockQ->pFirstNode; n != NULL; n = n->pNext) {
+        printf("\nBlocked Queue\n[");
+        for (Node* n = sml->blockQ->pLastNode; n != NULL; n = n->pPrev) {
             void* tmp = n->pItem;
             PCB* process = (PCB*)tmp;
             printf("%d, ", process->pid);
         }
     }
+}
+
+
+
+// helper function
+void findAndRemove(Simulation* sml, int targetPid) {
+        // blockQ
+        printf("Searching blockQ...\n");
+        for (Node* n = sml->blockQ->pFirstNode; n != NULL; n = n->pNext) {
+            void* tmp = n->pItem;
+            PCB* process = (PCB*)tmp;
+            if (process->pid == targetPid) {
+                if (n == sml->blockQ->pFirstNode) { // If it's the first node
+                    if (n->pNext) { // If there is a next node
+                        n->pNext->pPrev = NULL; // Update the next node's prev to NULL
+                    }
+                    sml->blockQ->pFirstNode = n->pNext; // Update the first node pointer
+                } else {
+                    n->pPrev->pNext = n->pNext; // Adjust the links
+                    if (n->pNext) { // If there is a next node
+                        n->pNext->pPrev = n->pPrev; // Update the next node's prev
+                    }
+                }
+                free(process); // Free the process
+                return;
+            }
+        }
+        // runQ
+        printf("Searching runQ...\n");
+        for (Node* n = sml->runQ->pFirstNode; n != NULL; n = n->pNext) {
+            void* tmp = n->pItem;
+            PCB* process = (PCB*)tmp;
+            if (process->pid == targetPid) {
+                if (n == sml->runQ->pFirstNode) { // If it's the first node
+                    if (n->pNext) { // If there is a next node
+                        n->pNext->pPrev = NULL; // Update the next node's prev to NULL
+                    }
+                    sml->runQ->pFirstNode = n->pNext; // Update the first node pointer
+                } else {
+                    n->pPrev->pNext = n->pNext; // Adjust the links
+                    if (n->pNext) { // If there is a next node
+                        n->pNext->pPrev = n->pPrev; // Update the next node's prev
+                    }
+                }
+                free(process); // Free the process
+                return;
+            }
+        }
+        // readyQ
+        for (int i = 0; i < 3; i++){
+            printf("Searching readyQ[%d]...\n", i);
+            for (Node* n = sml->readyQs[i]->pFirstNode; n != NULL; n = n->pNext) {
+                void* tmp = n->pItem;
+                PCB* process = (PCB*)tmp;
+                if (process->pid == targetPid) {
+                    if (n == sml->readyQs[i]->pFirstNode) { // If it's the first node
+                        if (n->pNext) { // If there is a next node
+                            n->pNext->pPrev = NULL; // Update the next node's prev to NULL
+                        }
+                        sml->readyQs[i]->pFirstNode = n->pNext; // Update the first node pointer
+                    } else {
+                        n->pPrev->pNext = n->pNext; // Adjust the links
+                        if (n->pNext) { // If there is a next node
+                            n->pNext->pPrev = n->pPrev; // Update the next node's prev
+                        }
+                    }
+                    free(process); // Free the process
+                    return;
+                }
+            }
+        }
+    
 }

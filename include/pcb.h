@@ -9,8 +9,6 @@
 #define MAX_SEMAPHORES 5
 #define MAX_READY_QUEUE 3
 
-extern int pidCounter = 0;
-
 typedef enum {
     READY, RUNNING, BLOCKED
 } State;
@@ -39,6 +37,7 @@ typedef struct Simulation {
 }Simulation;
 
 Simulation* initSml();
+void taskManage(Simulation*);
 
 // command operations
 PCB* createPCB(Simulation*, int priority);
@@ -54,5 +53,8 @@ void semaphoreP(Simulation*, int semaphore);
 void semaphoreV(Simulation*, int semaphore);
 void procInfoPCB(Simulation*, int pid);
 void Totalinfo(Simulation*);
+
+// helper function
+void findAndRemove(Simulation*, int targetPid);
 
 #endif
