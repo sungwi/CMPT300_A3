@@ -117,32 +117,127 @@ void taskManage(Simulation* sml) {
             printf("->Special case: init process is replaced by the other process#%d", replaced->pid);
     }
     // normal priority management
+        bool found = false;
     if (List_count(sml->runQ) == 0) {
-        // prirotiy high
-        if (rQ0Count > 0) {
-            void* tmp = List_trim(sml->readyQs[0]);
-            nextP = (PCB*)tmp;
-            nextP->state = RUNNING;
-            List_prepend(sml->runQ, nextP);        
-            printf("-> new pcb #%d from high priority Q\n", nextP->pid);                
+        //-----------------------------------
+        if ((rQ0Count > 0) && !found) {
+            PCB* process = NULL;
+            for (Node* n = sml->readyQs[0]->pLastNode; n != NULL; n = n->pPrev) {
+                process = (PCB*)n->pItem;
+                if (process->pid != 0) { // FOUND!!!
+                    // If it's the first node and there is a next node
+                    if (n == sml->readyQs[0]->pFirstNode) {
+                        sml->readyQs[0]->pFirstNode = n->pNext;
+                        if (n->pNext) { // If there is a next node
+                            n->pNext->pPrev = NULL;
+                        }
+                        else {
+                            sml->readyQs[0]->pFirstNode = NULL;
+                            sml->readyQs[0]->pLastNode = NULL;
+                        }
+                    } else { // It's not the first node
+                        if (n->pPrev) {
+                            n->pPrev->pNext = n->pNext; // Adjust the links
+                        }
+                        if (n->pNext) { // If there is a next node
+                            n->pNext->pPrev = n->pPrev;
+                        } else { // It's the last node, update pLastNode
+                            sml->readyQs[0]->pLastNode = n->pPrev;
+                        }
+                    }
+                    found = true;
+                    break; // Ensure to break after processing to exit the loop
+                }
+            }// for
+
+            if (found && process != NULL) {
+                nextP = process;
+                nextP->state = RUNNING;
+                List_prepend(sml->runQ, nextP);        
+                printf("-> new pcb #%d from norm priority Q\n", nextP->pid);
+            }
         }
-        if (rQ1Count > 0) {
-            void* tmp = List_trim(sml->readyQs[1]);
-            nextP = (PCB*)tmp;
-            nextP->state = RUNNING;
-            List_prepend(sml->runQ, nextP);
-            printf("-> new pcb #%d from norm priority Q\n", nextP->pid);
+        //-----------------------------------
+        if ((rQ1Count > 0) && !found) {
+            PCB* process = NULL;
+            for (Node* n = sml->readyQs[1]->pLastNode; n != NULL; n = n->pPrev) {
+                process = (PCB*)n->pItem;
+                if (process->pid != 0) { // FOUND!!!
+                    // If it's the first node and there is a next node
+                    if (n == sml->readyQs[1]->pFirstNode) {
+                        sml->readyQs[1]->pFirstNode = n->pNext;
+                        if (n->pNext) { // If there is a next node
+                            n->pNext->pPrev = NULL;
+                        }
+                        else {
+                            sml->readyQs[1]->pFirstNode = NULL;
+                            sml->readyQs[1]->pLastNode = NULL;
+                        }
+                    } else { // It's not the first node
+                        if (n->pPrev) {
+                            n->pPrev->pNext = n->pNext; // Adjust the links
+                        }
+                        if (n->pNext) { // If there is a next node
+                            n->pNext->pPrev = n->pPrev;
+                        } else { // It's the last node, update pLastNode
+                            sml->readyQs[1]->pLastNode = n->pPrev;
+                        }
+                    }
+                    found = true;
+                    break; // Ensure to break after processing to exit the loop
+                }
+            }// for
+
+            if (found && process != NULL) {
+                nextP = process;
+                nextP->state = RUNNING;
+                List_prepend(sml->runQ, nextP);        
+                printf("-> new pcb #%d from norm priority Q\n", nextP->pid);
+            }
         }
-        if (rQ2Count > 0) {
-            void* tmp = List_trim(sml->readyQs[2]);
-            nextP = (PCB*)tmp;
-            nextP->state = RUNNING;
-            List_prepend(sml->runQ, nextP);
-            printf("-> new pcb #%d from low priority Q\n", nextP->pid);
+        //-----------------------------------
+        if ((rQ1Count > 0) && !found) {
+            PCB* process = NULL;
+            for (Node* n = sml->readyQs[2]->pLastNode; n != NULL; n = n->pPrev) {
+                process = (PCB*)n->pItem;
+                if (process->pid != 0) { // FOUND!!!
+                    // If it's the first node and there is a next node
+                    if (n == sml->readyQs[2]->pFirstNode) {
+                        sml->readyQs[2]->pFirstNode = n->pNext;
+                        if (n->pNext) { // If there is a next node
+                            n->pNext->pPrev = NULL;
+                        }
+                        else {
+                            sml->readyQs[0]->pFirstNode = NULL;
+                            sml->readyQs[0]->pLastNode = NULL;
+                        }
+                    } else { // It's not the first node
+                        if (n->pPrev) {
+                            n->pPrev->pNext = n->pNext; // Adjust the links
+                        }
+                        if (n->pNext) { // If there is a next node
+                            n->pNext->pPrev = n->pPrev;
+                        } else { // It's the last node, update pLastNode
+                            sml->readyQs[1]->pLastNode = n->pPrev;
+                        }
+                    }
+                    found = true;
+                    break; // Ensure to break after processing to exit the loop
+                }
+            }// for
+
+            if (found && process != NULL) {
+                nextP = process;
+                nextP->state = RUNNING;
+                List_prepend(sml->runQ, nextP);        
+                printf("-> new pcb #%d from norm priority Q\n", nextP->pid);
+            }
         }
-    }
+
+    } //  if ((List_count(sml->runQ) == 0) && !found) 
 }
 
+// C
 PCB* createPCB(Simulation* sml, int priority) {
     PCB* newP = (PCB*)malloc(sizeof(PCB));
     bool result = false;
@@ -167,7 +262,7 @@ PCB* createPCB(Simulation* sml, int priority) {
     return newP;
 }
 
-// fork F
+// F
 void forkPCB(Simulation* sml) {
     PCB* curr = List_last(sml->runQ);
     //List_trim(sml->runQ);
@@ -194,6 +289,7 @@ void forkPCB(Simulation* sml) {
     }
 }
 
+// K
 void killPCB(Simulation* sml, int pid) {
     PCB* killed = sml->pcbPool[pid];
     if (pid == 0) { // init process pid
@@ -216,6 +312,7 @@ void killPCB(Simulation* sml, int pid) {
     }
 }
 
+// E
 void exitPCB(Simulation* sml) {
     if (List_count(sml->runQ) > 0) {
         PCB* tmp = List_last(sml->runQ);
@@ -240,6 +337,7 @@ void exitPCB(Simulation* sml) {
     return;
 }
 
+// Q
 void quantumPCB(Simulation* sml) {
     if (List_count(sml->runQ) > 0){
         PCB* curr = List_trim(sml->runQ);
@@ -254,7 +352,7 @@ void quantumPCB(Simulation* sml) {
     }
 }
 
-
+// S
 void sendPCB(Simulation* sml, int receiverPid, char* msg) {
     if (msg != NULL){
         List* receiveMsg = sml->pcbPool[receiverPid]->receiveMsg;
@@ -266,7 +364,7 @@ void sendPCB(Simulation* sml, int receiverPid, char* msg) {
             PCB* sender = List_trim(sml->runQ);
             sender->state = BLOCKED;
             List_append(sml->blockQ, sender);
-            printf("Success - Send");
+            printf("Success - Send: message \"%s\" sent to pid#%d", msg, receiverPid);
         }
     }
     else{
@@ -274,12 +372,13 @@ void sendPCB(Simulation* sml, int receiverPid, char* msg) {
     }
 }
 
+// R
 void receivePCB(Simulation* sml) {
     PCB* curr = List_last(sml->runQ);
     if (List_count(curr->receiveMsg) > 0) { // if there is message received
         char* msg = List_trim(curr->receiveMsg);
         // report
-        printf("Succes - Receive\n\"%s\"", msg);
+        printf("Succes - Receive\n\"%s\" from pid#%d", msg, curr->msgFrom);
         // unblock 
         int targetPid = curr->msgFrom;
         for (Node* n = sml->blockQ->pFirstNode; n != NULL; n = n->pNext) {
@@ -454,32 +553,45 @@ void Totalinfo(Simulation* sml) {
             PCB* process = (PCB*)tmp;
             printf("%d, ", process->pid);
         }
-        printf("\nReady Queue-Norm[");
+        printf("]\nReady Queue-Norm[");
         for (Node* n = sml->readyQs[1]->pLastNode; n != NULL; n = n->pPrev) {
             void* tmp = n->pItem;
             PCB* process = (PCB*)tmp;
             printf("%d, ", process->pid);
         }        
-        printf("\nReady Queue-Low[");
+        printf("]\nReady Queue-Low[");
         for (Node* n = sml->readyQs[2]->pLastNode; n != NULL; n = n->pPrev) {
             void* tmp = n->pItem;
             PCB* process = (PCB*)tmp;
             printf("%d, ", process->pid);
         }
         // run q
-        printf("\nRunning Queue\n[");
+        printf("]\nRunning Queue[");
         for (Node* n = sml->runQ->pLastNode; n != NULL; n = n->pPrev) {
             void* tmp = n->pItem;
             PCB* process = (PCB*)tmp;
             printf("%d, ", process->pid);
         }
         // blockQ
-        printf("\nBlocked Queue\n[");
+        printf("]\nBlocked Queue[");
         for (Node* n = sml->blockQ->pLastNode; n != NULL; n = n->pPrev) {
             void* tmp = n->pItem;
             PCB* process = (PCB*)tmp;
             printf("%d, ", process->pid);
         }
+        printf("]");
+        // semaphore
+        // for (int i = 0; i < MAX_SEMAPHORES; i++){
+        //     printf("\nSemaphore#%d[", i);
+        //     if(sml->semaphores[i]->blockedList != NULL) {
+        //         for (Node* n = sml->semaphores[i]->blockedList; n != NULL; n = n->pPrev) {
+        //             void* tmp = n->pItem;
+        //             PCB* process = (PCB*)tmp;
+        //             printf("%d, ", process->pid);
+        //         }
+        //     }
+        //     printf("]");
+        // }
     }
 }
 

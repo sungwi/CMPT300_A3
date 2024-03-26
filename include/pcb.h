@@ -43,20 +43,20 @@ Simulation* initSml();
 void taskManage(Simulation*);
 
 // command operations
-PCB* createPCB(Simulation*, int priority);
-void forkPCB(Simulation*);
-void killPCB(Simulation*, int pid);
-void exitPCB(Simulation*);
-void quantumPCB(Simulation*);
-void sendPCB(Simulation*, int receiverPid, char* msg);
-void receivePCB(Simulation*);
-void replyPCB(Simulation*, int receiverPid, char* msg);
-void newSem(Simulation*, int semaphore, int initialVal);
-void semaphoreP(Simulation*, int semaphore);
-void semaphoreV(Simulation*, int semaphore);
-void procInfoPCB(Simulation*, int pid);
-void Totalinfo(Simulation*);
-
+PCB* createPCB(Simulation*, int priority); // C
+void forkPCB(Simulation*); // F
+void killPCB(Simulation*, int pid); // K
+void exitPCB(Simulation*); // E
+void quantumPCB(Simulation*); // Q
+void sendPCB(Simulation*, int receiverPid, char* msg); // S
+void receivePCB(Simulation*); // R
+void replyPCB(Simulation*, int receiverPid, char* msg); // Y
+void newSem(Simulation*, int semaphore, int initialVal); // N
+void semaphoreP(Simulation*, int semaphore); // P
+void semaphoreV(Simulation*, int semaphore); // V
+void procInfoPCB(Simulation*, int pid); // I
+void Totalinfo(Simulation*); // T
+ 
 // helper function
 void findAndRemove(Simulation*, int targetPid);
 #endif
