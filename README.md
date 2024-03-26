@@ -1,0 +1,1 @@
+- simulation init function creates init process, whose priority is set to be 0 (high) by default.

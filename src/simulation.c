@@ -23,7 +23,7 @@ int main() {
     printf("Simulation Start\n");
     char cmd;
     Simulation* sml = initSml();
-    while(1){
+    while(!(sml->terminate)){
         printCommands();
         cmd = getchar();
         while (getchar() != '\n');
@@ -40,9 +40,11 @@ int main() {
                 printf("Invalid priority input.\n");
             }
             while (getchar() != '\n');
+            sml->processUpdate = true;
         }
         else if (cmd == 'F') {
             forkPCB(sml);
+            sml->processUpdate = true;
         }
         else if (cmd == 'K') {
             int pid;
@@ -53,12 +55,15 @@ int main() {
                 printf("Invalid priority input.\n");
             }
             while (getchar() != '\n');
+            sml->processUpdate = true;
         }
         else if (cmd == 'E') {
             exitPCB(sml);
+            sml->processUpdate = true;
         }
         else if (cmd == 'Q') {
             quantumPCB(sml);
+            sml->processUpdate = true;
         }  
         else if (cmd == 'S') {
             int pid;
@@ -75,9 +80,11 @@ int main() {
                 printf("Invalid PID input.\n");
                 while(getchar() != '\n'); // Clear the buffer if the input was not an integer
             }
+            sml->processUpdate = true;
         }
         else if (cmd == 'R') {
             receivePCB(sml);
+            sml->processUpdate = true;
         }
         else if (cmd == 'Y') {
             int pid;
@@ -89,16 +96,16 @@ int main() {
                 printf("Enter reply message: ");
                 fgets(msg, sizeof(msg), stdin);
                 msg[strcspn(msg, "\n")] = '\0'; // Remove trailing newline
-                sendPCB(sml, pid, msg);
+                replyPCB(sml, pid, msg);
             } else {
                 printf("Invalid PID input.\n");
                 while(getchar() != '\n'); // Clear the buffer if the input was not an integer
             }
-            
+            sml->processUpdate = true;
         }
         else if (cmd == 'N') {
             int semaphore, initialVal;
-            printf("Enter semaphore: ");
+            printf("Enter semaphore (0 ~ 3): ");
             if (scanf("%d", &semaphore) == 1) { 
                 while(getchar() != '\n'); // Clear the buffer after reading semaphore
 
@@ -114,6 +121,7 @@ int main() {
                 printf("Invalid semaphore input.\n");
                 while(getchar() != '\n'); // Clear the buffer if semaphore input was invalid
             }
+            sml->processUpdate = true;
         }
         else if (cmd == 'P') {
             int semaphore;
@@ -124,6 +132,7 @@ int main() {
                 printf("Invalid priority input.\n");
             }
             while (getchar() != '\n');
+            sml->processUpdate = true;
         }
         else if (cmd == 'V') {
             int semaphore;
@@ -134,6 +143,7 @@ int main() {
                 printf("Invalid priority input.\n");
             }
             while (getchar() != '\n');
+            sml->processUpdate = true;
         }
         else if (cmd == 'I') {
             int pid;
@@ -144,14 +154,21 @@ int main() {
                 printf("Invalid priority input.\n");
             }
             while (getchar() != '\n');
+            sml->processUpdate = false;
         }
         else {
             Totalinfo(sml);
+            sml->processUpdate = false;
         }
-        taskManage(sml);
+        
+        if (sml->processUpdate)
+            taskManage(sml);
+
+        if (sml->counter == 0)
+            break;
     } // while(1)
 
-    printf("Simulation End\n");   
+    printf("\nSimulation terminates.\n");   
 
 
     return 0;

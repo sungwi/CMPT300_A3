@@ -33,8 +33,10 @@ typedef struct Simulation {
     List* runQ;
     List* blockQ;
     Semaphore* semaphores[MAX_SEMAPHORES]; // 0 ~ 4
-    int pidCounter;
-
+    PCB* newComer; // to handle special case
+    int counter;
+    bool processUpdate;
+    bool terminate; // turn on / off 
 }Simulation;
 
 Simulation* initSml();
@@ -57,5 +59,5 @@ void Totalinfo(Simulation*);
 
 // helper function
 void findAndRemove(Simulation*, int targetPid);
-
+bool removeNonZeroPIDPCB(Simulation* sml, int i);
 #endif
