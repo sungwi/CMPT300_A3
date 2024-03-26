@@ -21,6 +21,7 @@ Simulation* initSml() {
 }
 
 void taskManage(Simulation* sml) {
+    printf("\n(task manager working...)\n");
     int rQ0Count = List_count(sml->readyQs[0]);
     int rQ1Count = List_count(sml->readyQs[1]);
     int rQ2Count = List_count(sml->readyQs[2]);
@@ -37,7 +38,8 @@ void taskManage(Simulation* sml) {
             }
             else {
                 nextP->state = RUNNING;
-                List_append(sml->runQ, nextP);
+                List_prepend(sml->runQ, nextP);
+                printf("-> new pcb #%d from high priority Q\n", nextP->pid);
             }
         }
         else if (rQ1Count > 0) {
@@ -49,7 +51,8 @@ void taskManage(Simulation* sml) {
             }
             else {
                 nextP->state = RUNNING;
-                List_append(sml->runQ, nextP);
+                List_prepend(sml->runQ, nextP);
+                 printf("-> new pcb #%d from norm priority Q\n", nextP->pid);
             }
         }
         else if (rQ2Count > 0) {
@@ -61,7 +64,8 @@ void taskManage(Simulation* sml) {
             }
             else {
                 nextP->state = RUNNING;
-                List_append(sml->runQ, nextP);
+                List_prepend(sml->runQ, nextP);
+                printf("-> new pcb #%d from low priority Q\n", nextP->pid);
             }
         }
         else {
@@ -72,7 +76,7 @@ void taskManage(Simulation* sml) {
         if (specialCase && (rQ0Count == 0) && (rQ1Count == 0) && (rQ2Count == 0)) {
             printf("\nSpecial Case: init process (pid#0) runs\n");
             initP->state = RUNNING;
-            List_append(sml->runQ, initP);
+            List_prepend(sml->runQ, initP);
         }
         // else {
         //     printf("No PCB in Ready Queues");
@@ -88,7 +92,7 @@ PCB* createPCB(Simulation* sml, int priority) {
         newP->priority = priority;
         newP->state = READY; // by default
         newP->receiveMsg = List_create();
-        List_append(sml->readyQs[priority], newP);
+        List_prepend(sml->readyQs[priority], newP);
         sml->pcbPool[newP->pid] = newP;
         result = true;
     }
@@ -114,7 +118,7 @@ void forkPCB(Simulation* sml) {
         forked->pid = pidCounter++;
         forked->priority = curr->priority;
         forked->state = READY;
-        List_append(sml->readyQs[forked->priority], forked);
+        List_prepend(sml->readyQs[forked->priority], forked);
         sml->pcbPool[forked->pid] = forked;
         result = true;
     }
@@ -144,18 +148,22 @@ void exitPCB(Simulation* sml) {
 }
 
 void quantumPCB(Simulation* sml) {
-    PCB* curr = List_last(sml->runQ);
-    if (curr != NULL){
-        List_trim(sml->runQ);
-        List_prepend(sml->readyQs[curr->priority], curr);
-        // reports needed here
-        printf("Success - Quantum");
+    if (List_count(sml->runQ) > 0){
+        PCB* curr = List_trim(sml->runQ);
+        if (curr != NULL) {
+            curr->state = READY; // Update state to READY
+            List_prepend(sml->readyQs[curr->priority], curr); // Move to the appropriate ready queue
+            printf("Success - Quantum\npid#%d expires and moves to ready queue\n", curr->pid);
+        }
+
+        // Attempt to select a new process to run from the ready queues
+        //taskManage(sml); // taskManage function is called to handle process selection
     }
     else {
-        printf("Failure - Quantum");
+        printf("Failure - Quantum: No process is currently running.\n");
     }
-    
 }
+
 
 void sendPCB(Simulation* sml, int receiverPid, char* msg) {
     if (msg != NULL){
@@ -282,19 +290,19 @@ void procInfoPCB(Simulation* sml, int pid) {
 void Totalinfo(Simulation* sml) {
     if (sml != NULL) {
         // ready qs
-        printf("\nReady Queue\nHigh[");
+        printf("\nReady Queue-High[");
         for (Node* n = sml->readyQs[0]->pLastNode; n != NULL; n = n->pPrev) {
             void* tmp = n->pItem;
             PCB* process = (PCB*)tmp;
             printf("%d, ", process->pid);
         }
-        printf("\nReady Queue\nNorm[");
+        printf("\nReady Queue-Norm[");
         for (Node* n = sml->readyQs[1]->pLastNode; n != NULL; n = n->pPrev) {
             void* tmp = n->pItem;
             PCB* process = (PCB*)tmp;
             printf("%d, ", process->pid);
         }        
-        printf("\nReady Queue\nLow[");
+        printf("\nReady Queue-Low[");
         for (Node* n = sml->readyQs[2]->pLastNode; n != NULL; n = n->pPrev) {
             void* tmp = n->pItem;
             PCB* process = (PCB*)tmp;
