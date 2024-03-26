@@ -18,6 +18,7 @@ typedef struct PCB {
     int priority; // 0 = high, 1 = norm, 2 = low
     State state;
     char* receiveMsg;
+    int msgFrom; // pid number of sender to me; this is blocked; used to unblock
 } PCB;
 
 typedef struct Semaphore {

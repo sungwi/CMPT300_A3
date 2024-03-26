@@ -170,6 +170,8 @@ void sendPCB(Simulation* sml, int receiverPid, char* msg) {
         List* receiveMsg = sml->pcbPool[receiverPid]->receiveMsg;
         if(List_count(receiveMsg) == 0) { // blocks multiple msgs. but can be changed
             List_append(receiveMsg, strdup(msg));
+            PCB* runningP = List_last(sml->runQ);
+            sml->pcbPool[receiverPid]->msgFrom = runningP->pid;
             // take running process out of runQ and put it on blockedQ
             PCB* sender = List_trim(sml->runQ);
             sender->state = BLOCKED;
@@ -188,10 +190,39 @@ void receivePCB(Simulation* sml) {
         char* msg = List_trim(curr->receiveMsg);
         // report
         printf("Succes - Receive\n\"%s\"", msg);
+        // unblock 
+        int targetPid = curr->msgFrom;
+        for (Node* n = sml->blockQ->pFirstNode; n != NULL; n = n->pNext) {
+            void* tmp = n->pItem;
+            PCB* process = (PCB*)tmp;
+            if (process->pid == targetPid) {
+                if (n == sml->blockQ->pFirstNode) { // If it's the first node
+                    if (n->pNext) { // If there is a next node
+                        n->pNext->pPrev = NULL; // Update the next node's prev to NULL
+                        sml->blockQ->pFirstNode = n->pNext; // Update the first node pointer
+                    }
+                    else{
+                        sml->blockQ->pFirstNode = NULL;
+                        sml->blockQ->pLastNode = NULL;
+                    }
+                    //sml->blockQ->pFirstNode = n->pNext; // Update the first node pointer
+                } else {
+                    n->pPrev->pNext = n->pNext; // Adjust the links
+                    if (n->pNext) { // If there is a next node
+                        n->pNext->pPrev = n->pPrev; // Update the next node's prev
+                    }
+                }
+                process->state = READY;
+                List_prepend(sml->readyQs[process->priority], process);
+                // int a = List_count(sml->blockQ);
+                // printf("AAAAAA; %d", a);
+                return;
+            }
+        } // for
     }
     else {
         List_trim(sml->runQ);
-        List_append(sml->blockQ, curr);
+        List_prepend(sml->blockQ, curr);
         printf("Failure - Receive");  // blocked
     }
 }
@@ -199,14 +230,14 @@ void receivePCB(Simulation* sml) {
 void replyPCB(Simulation* sml, int receiverPid, char* msg) {
     if (msg != NULL) {
         List* receiveMsg = sml->pcbPool[receiverPid]->receiveMsg;
-        List_append(receiveMsg, strdup(msg));
+        List_prepend(receiveMsg, strdup(msg));
         // unblock: find receiver
         for (Node* n = sml->blockQ->pFirstNode; n != NULL; n = n->pNext) {
             void* tmp = n->pItem;
             PCB* process = (PCB*)tmp;
             if(process->pid == receiverPid) {
                 n->pPrev->pNext = n->pNext; // take out of blockQ
-                List_append(sml->readyQs[process->priority], process); // move to readyQ
+                List_prepend(sml->readyQs[process->priority], process); // move to readyQ
             }
             process->state = READY;
         }
@@ -258,7 +289,7 @@ void semaphoreV(Simulation* sml, int semaphore) {
             PCB* process = (PCB*)tmp;
             if(process->pid == targetPid) {
                 n->pPrev->pNext = n->pNext; // take out of blockQ
-                List_append(sml->readyQs[process->priority], process); // move to readyQ
+                List_prepend(sml->readyQs[process->priority], process); // move to readyQ
             }
             process->state = READY;
         }
