@@ -59,5 +59,4 @@ void Totalinfo(Simulation*);
 
 // helper function
 void findAndRemove(Simulation*, int targetPid);
-bool removeNonZeroPIDPCB(Simulation* sml, int i);
 #endif

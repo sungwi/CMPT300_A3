@@ -372,7 +372,11 @@ void newSem(Simulation* sml, int semaphore, int initialVal) {
 
 void semaphoreP(Simulation* sml, int semaphore) {
     if (semaphore < 0 || 3 < semaphore) {
-        printf("Failure - New Semaphore: invalid semaphore. Enter 0 ~ 3.\n");
+        printf("Failure - Semaphore P: invalid semaphore. Enter 0 ~ 3.\n");
+        return;
+    }
+    if (sml->semaphores[semaphore]->value <= 0) {
+        printf("Failure - Semaphore P: this semaphore is not available now.\n");
         return;
     }
     Semaphore* sem = sml->semaphores[semaphore];
